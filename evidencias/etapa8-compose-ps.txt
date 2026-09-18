@@ -1,0 +1,2 @@
+NAME      IMAGE           COMMAND           SERVICE   CREATED          STATUS                    PORTS
+notas     notas-api:1.0   "python app.py"   api       21 seconds ago   Up 20 seconds (healthy)   0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp

@@ -94,6 +94,31 @@ docker volume rm notas-dados      # remove os dados permanentemente
 docker image rm notas-api:1.0
 ```
 
+## Alternativa: Docker Compose
+
+O arquivo `compose.yaml` declara o serviço, o mapeamento de porta, o volume nomeado e um *healthcheck* que consulta a rota `/health`. Build e execução em um único comando:
+
+```bash
+docker compose up -d --build
+```
+
+```bash
+docker compose ps        # estado do serviço, incluindo o healthcheck
+docker compose logs -f   # logs em tempo real
+```
+
+Para encerrar preservando os dados:
+
+```bash
+docker compose down
+```
+
+Para encerrar removendo também o volume (apaga as anotações):
+
+```bash
+docker compose down -v
+```
+
 ## Execução local (sem Docker)
 
 ```bash
