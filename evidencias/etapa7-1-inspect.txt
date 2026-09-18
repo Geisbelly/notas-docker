@@ -1,0 +1,11 @@
+[
+    {
+        "CreatedAt": "2026-09-18T18:05:58-03:00",
+        "Driver": "local",
+        "Labels": null,
+        "Mountpoint": "/var/lib/docker/volumes/notas-dados/_data",
+        "Name": "notas-dados",
+        "Options": null,
+        "Scope": "local"
+    }
+]

@@ -1,11 +1,15 @@
 __pycache__/
 *.pyc
 *.pyo
+.git/
+.gitignore
 venv/
 .venv/
 env/
 data/
 .env
-.history/
+*.md
 .vscode/
-anotações.txt
+.history/
+evidencias/
+anota*.txt

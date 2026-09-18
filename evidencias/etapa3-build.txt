@@ -1,0 +1,42 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 303B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.12-slim
+#2 DONE 1.3s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 159B 0.0s done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 1.90kB 0.0s done
+#4 DONE 0.0s
+
+#5 [1/5] FROM docker.io/library/python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea
+#5 resolve docker.io/library/python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea 0.0s done
+#5 DONE 0.0s
+
+#6 [2/5] WORKDIR /app
+#6 CACHED
+
+#7 [3/5] COPY requirements.txt .
+#7 CACHED
+
+#8 [4/5] RUN pip install --no-cache-dir -r requirements.txt
+#8 CACHED
+
+#9 [5/5] COPY . .
+#9 DONE 0.0s
+
+#10 exporting to image
+#10 exporting layers 0.0s done
+#10 exporting manifest sha256:665f8c0653145132996ce03a9316f16c32e007f0a57cd25d0a73b6c08f6dd45f done
+#10 exporting config sha256:9d38133acca4c9ed4389105be3ad1f572b51a3aaefe3e9f5dc3baa528b17bc4a 0.0s done
+#10 exporting attestation manifest sha256:46ce6345d90d0f7838093133dfdb92be36fcdbfc8878f62bcfe4e6f3c1fadd13 0.0s done
+#10 exporting manifest list sha256:bea37fea7e08c6e0cda883f0aa2f2de26ccb937e03932b5947318b26a9a8fe0e 0.0s done
+#10 naming to docker.io/library/notas-api:1.0 done
+#10 unpacking to docker.io/library/notas-api:1.0 0.0s done
+#10 DONE 0.1s
