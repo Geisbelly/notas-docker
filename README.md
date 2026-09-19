@@ -43,8 +43,9 @@ notas-docker/
 ├── Dockerfile          # receita da imagem
 ├── .dockerignore       # filtro do contexto de build
 ├── README.md
+├── compose.yaml        # alternativa com Docker Compose
 ├── RELATORIO.md        # relatório da atividade
-└── evidencias/         # saídas de terminal das etapas 3 a 7
+└── evidencias/         # saídas de terminal das etapas 3 a 7 e do Compose
 ```
 
 ## Como executar
