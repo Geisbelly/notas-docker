@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notas</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --surface-2: #f0f2f5;
+    --border: #e2e5ea;
+    --text: #1a1d21;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --accent-text: #ffffff;
+    --ok: #15803d;
+    --ok-bg: #dcfce7;
+    --ok-bd: #86efac;
+    --warn: #a16207;
+    --warn-bg: #fef9c3;
+    --warn-bd: #fde047;
+    --err: #b91c1c;
+    --err-bg: #fee2e2;
+    --err-bd: #fca5a5;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101216;
+      --surface: #191c21;
+      --surface-2: #14171b;
+      --border: #2a2f37;
+      --text: #e8eaed;
+      --muted: #9aa1ab;
+      --accent: #3b82f6;
+      --accent-text: #ffffff;
+      --ok: #4ade80;
+      --ok-bg: #12301d;
+      --ok-bd: #1d5334;
+      --warn: #fcd34d;
+      --warn-bg: #332711;
+      --warn-bd: #5c4715;
+      --err: #fca5a5;
+      --err-bg: #3b1616;
+      --err-bd: #6b2222;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #101216;
+    --surface: #191c21;
+    --surface-2: #14171b;
+    --border: #2a2f37;
+    --text: #e8eaed;
+    --muted: #9aa1ab;
+    --accent: #3b82f6;
+    --accent-text: #ffffff;
+    --ok: #4ade80;
+    --ok-bg: #12301d;
+    --ok-bd: #1d5334;
+    --warn: #fcd34d;
+    --warn-bg: #332711;
+    --warn-bd: #5c4715;
+    --err: #fca5a5;
+    --err-bg: #3b1616;
+    --err-bd: #6b2222;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 32px 16px 64px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+  }
+
+  .wrap { max-width: 720px; margin: 0 auto; }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  h1 { font-size: 1.5rem; margin: 0; letter-spacing: -0.01em; }
+
+  .sub { color: var(--muted); font-size: 0.875rem; margin: 4px 0 24px; }
+
+  code, .mono { font-family: var(--mono); font-size: 0.8125rem; }
+
+  .badge {
+    font-size: 0.75rem;
+    font-family: var(--mono);
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--border);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .badge.ok  { background: var(--ok-bg);  color: var(--ok); }
+  .badge.err { background: var(--err-bg); color: var(--err); }
+
+  h2 {
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 0 0 12px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+
+  /* ---- veredito de persistencia ---- */
+
+  .veredito {
+    border: 1px solid var(--border);
+    border-left-width: 4px;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    background: var(--surface-2);
+  }
+  .veredito .titulo { font-weight: 600; font-size: 0.9375rem; }
+  .veredito .texto  { font-size: 0.8125rem; color: var(--muted); margin-top: 2px; }
+
+  .veredito.ok   { background: var(--ok-bg);   border-color: var(--ok-bd);   border-left-color: var(--ok); }
+  .veredito.ok .titulo   { color: var(--ok); }
+  .veredito.warn { background: var(--warn-bg); border-color: var(--warn-bd); border-left-color: var(--warn); }
+  .veredito.warn .titulo { color: var(--warn); }
+  .veredito.err  { background: var(--err-bg);  border-color: var(--err-bd);  border-left-color: var(--err); }
+  .veredito.err .titulo  { color: var(--err); }
+  .veredito.ok .texto, .veredito.warn .texto, .veredito.err .texto { color: inherit; opacity: 0.85; }
+
+  /* ---- grade de estado ---- */
+
+  .grupos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+  }
+
+  .grupo { min-width: 0; }
+
+  .grupo h3 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 0 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  dl { margin: 0; }
+
+  .linha {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    gap: 10px;
+    padding: 5px 0;
+    align-items: baseline;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  }
+  .linha:last-child { border-bottom: 0; }
+
+  dt { color: var(--muted); font-size: 0.8125rem; min-width: 0; }
+
+  dd {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    text-align: right;
+    word-break: break-all;
+    min-width: 0;
+  }
+  dd.destaque { font-weight: 600; }
+  dd.sim { color: var(--ok); }
+  dd.nao { color: var(--err); }
+  dd.na  { color: var(--muted); }
+
+  /* ---- formulario e lista ---- */
+
+  textarea {
+    width: 100%;
+    min-height: 76px;
+    resize: vertical;
+    padding: 10px 12px;
+    font: inherit;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  button {
+    font: inherit;
+    font-weight: 500;
+    padding: 9px 18px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--accent-text);
+    cursor: pointer;
+  }
+  button:hover:not(:disabled) { filter: brightness(1.08); }
+  button:disabled { opacity: 0.5; cursor: default; }
+
+  button.secundario {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 5px 12px;
+    font-size: 0.8125rem;
+  }
+  button.secundario:hover:not(:disabled) { color: var(--text); filter: none; }
+
+  .hint { font-size: 0.8125rem; color: var(--muted); }
+  .hint.error { color: var(--err); }
+
+  ul { list-style: none; margin: 0; padding: 0; }
+
+  li {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+
+  .meta {
+    display: flex;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .texto { white-space: pre-wrap; word-break: break-word; }
+
+  .vazio {
+    color: var(--muted);
+    font-size: 0.875rem;
+    padding: 20px;
+    text-align: center;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+  }
+
+  footer {
+    margin-top: 32px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+  footer code {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+
+  @media (max-width: 480px) {
+    .linha { grid-template-columns: 1fr; gap: 0; }
+    dd { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Notas</h1>
+    <span id="saude" class="badge">verificando…</span>
+  </header>
+  <p class="sub">Serviço Flask em contêiner, com anotações gravadas em <code>{{ data_dir }}</code>.</p>
+
+  <div class="card">
+    <div class="row" style="margin-top:0; margin-bottom:12px;">
+      <h2 style="margin:0;">Estado do serviço</h2>
+      <button id="atualizar" class="secundario" type="button">Atualizar</button>
+    </div>
+
+    <div id="veredito" class="veredito">
+      <div class="titulo">Consultando…</div>
+      <div class="texto">Lendo o estado da montagem em <code>/proc/self/mountinfo</code>.</div>
+    </div>
+
+    <div id="grupos" class="grupos"></div>
+  </div>
+
+  <div class="card">
+    <h2>Nova anotação</h2>
+    <textarea id="texto" placeholder="Escreva uma anotação…" maxlength="2000"></textarea>
+    <div class="row">
+      <span id="aviso" class="hint"></span>
+      <button id="salvar" type="button">Salvar</button>
+    </div>
+  </div>
+
+  <h2>Anotações salvas (<span id="total">0</span>)</h2>
+  <ul id="lista"></ul>
+  <div id="vazio" class="vazio" hidden>Nenhuma anotação ainda.</div>
+
+  <footer>
+    API: <code>GET /health</code> · <code>POST /notas</code> · <code>GET /notas</code> · <code>GET /info</code>
+  </footer>
+
+</div>
+
+<script>
+  const $texto     = document.getElementById('texto');
+  const $salvar    = document.getElementById('salvar');
+  const $atualizar = document.getElementById('atualizar');
+  const $aviso     = document.getElementById('aviso');
+  const $lista     = document.getElementById('lista');
+  const $vazio     = document.getElementById('vazio');
+  const $total     = document.getElementById('total');
+  const $saude     = document.getElementById('saude');
+  const $veredito  = document.getElementById('veredito');
+  const $grupos    = document.getElementById('grupos');
+
+  // ---------- utilidades ----------
+
+  function aviso(msg, erro) {
+    $aviso.textContent = msg || '';
+    $aviso.classList.toggle('error', !!erro);
+  }
+
+  function bytes(n) {
+    if (n === null || n === undefined) return '—';
+    if (n < 1024) return n + ' B';
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KiB';
+    if (n < 1024 * 1024 * 1024) return (n / 1024 / 1024).toFixed(1) + ' MiB';
+    return (n / 1024 / 1024 / 1024).toFixed(2) + ' GiB';
+  }
+
+  function duracao(s) {
+    if (s === null || s === undefined) return '—';
+    if (s < 60) return Math.round(s) + 's';
+    const m = Math.floor(s / 60), h = Math.floor(m / 60);
+    if (h > 0) return h + 'h ' + (m % 60) + 'min';
+    return m + 'min ' + Math.round(s % 60) + 's';
+  }
+
+  function quando(iso) {
+    return iso ? String(iso).replace('T', ' ') : '—';
+  }
+
+  function simNao(v) {
+    if (v === null || v === undefined) return { texto: '—', classe: 'na' };
+    return v ? { texto: 'sim', classe: 'sim' } : { texto: 'não', classe: 'nao' };
+  }
+
+  /** Monta um grupo <h3> + <dl> a partir de uma lista de [rotulo, valor, classe?]. */
+  function grupo(titulo, itens) {
+    const div = document.createElement('div');
+    div.className = 'grupo';
+
+    const h3 = document.createElement('h3');
+    h3.textContent = titulo;
+    div.append(h3);
+
+    const dl = document.createElement('dl');
+    for (const [rotulo, valor, classe] of itens) {
+      const linha = document.createElement('div');
+      linha.className = 'linha';
+
+      const dt = document.createElement('dt');
+      dt.textContent = rotulo;
+
+      const dd = document.createElement('dd');
+      dd.textContent = (valor === null || valor === undefined || valor === '') ? '—' : String(valor);
+      if (classe) dd.className = classe;
+
+      linha.append(dt, dd);
+      dl.append(linha);
+    }
+    div.append(dl);
+    return div;
+  }
+
+  // ---------- estado ----------
+
+  function renderVeredito(montagem) {
+    const classes = {
+      'volume nomeado': 'ok',
+      'volume anonimo': 'warn',
+      'camada gravavel': 'err',
+      'bind mount': 'ok',
+    };
+    const titulos = {
+      'volume nomeado': 'Persistente — volume nomeado',
+      'volume anonimo': 'Frágil — volume anônimo',
+      'camada gravavel': 'Efêmero — camada gravável',
+      'bind mount': 'Persistente — bind mount',
+    };
+
+    const classe = classes[montagem.tipo] || '';
+    let titulo = titulos[montagem.tipo] || 'Montagem desconhecida';
+    if (montagem.nome) titulo += ' · ' + montagem.nome;
+
+    $veredito.className = 'veredito ' + classe;
+    $veredito.replaceChildren();
+
+    const t = document.createElement('div');
+    t.className = 'titulo';
+    t.textContent = titulo;
+
+    const d = document.createElement('div');
+    d.className = 'texto';
+    d.textContent = montagem.descricao || '';
+
+    $veredito.append(t, d);
+  }
+
+  async function carregarEstado() {
+    try {
+      const r = await fetch('/info');
+      const info = await r.json();
+      const m = info.armazenamento.montagem;
+
+      renderVeredito(m);
+
+      const pid1 = simNao(info.container.e_pid_1);
+      const rw = simNao(!m.somente_leitura);
+
+      $grupos.replaceChildren(
+        grupo('Armazenamento', [
+          ['DATA_DIR', info.armazenamento.data_dir, 'destaque'],
+          ['definido por', info.armazenamento.origem_variavel],
+          ['tipo de montagem', m.tipo, 'destaque'],
+          ['nome do volume', m.nome],
+          ['caminho no host', m.origem_host],
+          ['sistema de arquivos', m.fstype],
+          ['gravável', rw.texto, rw.classe],
+        ]),
+
+        grupo('Banco de dados', [
+          ['arquivo', info.banco.caminho],
+          ['existe', simNao(info.banco.existe).texto, simNao(info.banco.existe).classe],
+          ['tamanho', bytes(info.banco.bytes)],
+          ['páginas', info.banco.paginas ? info.banco.paginas + ' × ' + bytes(info.banco.pagina_bytes) : null],
+          ['anotações', info.banco.total_notas, 'destaque'],
+          ['primeira em', quando(info.banco.primeira_em)],
+          ['última em', quando(info.banco.ultima_em)],
+          ['SQLite', info.banco.sqlite],
+        ]),
+
+        grupo('Contêiner', [
+          ['hostname (ID curto)', info.container.hostname, 'destaque'],
+          ['PID do processo', info.container.pid],
+          ['é o PID 1', pid1.texto, pid1.classe],
+          ['no ar há', duracao(info.container.uptime_s)],
+          ['hora interna', quando(info.container.hora_local)],
+          ['fuso', info.container.fuso],
+          ['CPUs visíveis', info.container.cpus_visiveis],
+          ['limite de memória', info.container.limite_memoria_bytes ? bytes(info.container.limite_memoria_bytes) : 'sem limite'],
+        ]),
+
+        grupo('Runtime', [
+          ['Python', info.runtime.python],
+          ['Flask', info.runtime.flask],
+          ['sistema base', info.runtime.sistema],
+          ['arquitetura', info.runtime.arquitetura],
+        ]),
+      );
+    } catch {
+      $veredito.className = 'veredito err';
+      $veredito.replaceChildren();
+      const t = document.createElement('div');
+      t.className = 'titulo';
+      t.textContent = 'Não foi possível ler o estado';
+      $veredito.append(t);
+    }
+  }
+
+  async function checarSaude() {
+    try {
+      const r = await fetch('/health');
+      const j = await r.json();
+      $saude.textContent = 'health: ' + j.status;
+      $saude.className = 'badge ok';
+    } catch {
+      $saude.textContent = 'health: offline';
+      $saude.className = 'badge err';
+    }
+  }
+
+  // ---------- notas ----------
+
+  async function carregarNotas() {
+    try {
+      const r = await fetch('/notas');
+      const notas = await r.json();
+
+      $lista.replaceChildren();
+      $total.textContent = notas.length;
+      $vazio.hidden = notas.length > 0;
+
+      for (const nota of notas) {
+        const li = document.createElement('li');
+
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        const id = document.createElement('span');
+        id.textContent = '#' + nota.id;
+        const data = document.createElement('span');
+        data.textContent = quando(nota.criado_em);
+        meta.append(id, data);
+
+        const texto = document.createElement('div');
+        texto.className = 'texto';
+        texto.textContent = nota.texto;
+
+        li.append(meta, texto);
+        $lista.append(li);
+      }
+    } catch {
+      aviso('Não foi possível carregar as anotações.', true);
+    }
+  }
+
+  async function salvar() {
+    const texto = $texto.value.trim();
+    if (!texto) {
+      aviso('Escreva algo antes de salvar.', true);
+      $texto.focus();
+      return;
+    }
+
+    $salvar.disabled = true;
+    aviso('Salvando…');
+
+    try {
+      const r = await fetch('/notas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texto })
+      });
+
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        aviso(j.erro || ('Erro ' + r.status), true);
+        return;
+      }
+
+      $texto.value = '';
+      aviso('Salva.');
+      await Promise.all([carregarNotas(), carregarEstado()]);
+      setTimeout(() => aviso(''), 2000);
+    } catch {
+      aviso('Falha de rede.', true);
+    } finally {
+      $salvar.disabled = false;
+    }
+  }
+
+  // ---------- inicializacao ----------
+
+  $salvar.addEventListener('click', salvar);
+  $atualizar.addEventListener('click', () => {
+    checarSaude();
+    carregarEstado();
+    carregarNotas();
+  });
+  $texto.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) salvar();
+  });
+
+  checarSaude();
+  carregarEstado();
+  carregarNotas();
+  setInterval(checarSaude, 15000);
+  setInterval(carregarEstado, 30000);
+</script>
+</body>
+</html>

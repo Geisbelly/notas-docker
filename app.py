@@ -2,7 +2,9 @@ import os
 import sqlite3
 from datetime import datetime
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, render_template, request
+
+from estado import coletar
 
 DATA_DIR = os.environ.get("DATA_DIR", "/app/data")
 DB_PATH = os.path.join(DATA_DIR, "notas.db")
@@ -66,6 +68,16 @@ def listar_notas():
     conn.close()
 
     return jsonify([dict(linha) for linha in linhas])
+
+
+@app.get("/info")
+def info():
+    return jsonify(coletar(DATA_DIR, DB_PATH))
+
+
+@app.get("/")
+def pagina():
+    return render_template("index.html", data_dir=DATA_DIR)
 
 
 if __name__ == "__main__":

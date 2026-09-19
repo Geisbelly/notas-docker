@@ -1,7 +1,7 @@
 services:
   api:
     build: .
-    image: notas-api:1.0
+    image: notas-api:1.1
     container_name: notas
     ports:
       - "8000:8000"
