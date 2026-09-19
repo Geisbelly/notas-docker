@@ -1,0 +1,28 @@
+$ python --version
+Python 3.12.10
+$ pip freeze | grep -i flask
+Flask==3.0.3
+$ DATA_DIR=./data python app.py   (servidor em segundo plano, venv com Flask 3.0.3; diretório de dados temporário fora do projeto)
+
+$ curl -s http://localhost:8000/health
+{"status":"ok"}
+
+$ curl -X POST http://localhost:8000/notas -H "Content-Type: application/json" -d '{"texto": "primeira nota"}'
+{"criado_em":"2026-09-19T09:35:56","id":1,"texto":"primeira nota"}
+
+{"criado_em":"2026-09-19T09:35:57","id":2,"texto":"segunda nota"}
+
+{"criado_em":"2026-09-19T09:35:57","id":3,"texto":"terceira nota"}
+
+$ curl -s http://localhost:8000/notas
+[{"criado_em":"2026-09-19T09:35:56","id":1,"texto":"primeira nota"},{"criado_em":"2026-09-19T09:35:57","id":2,"texto":"segunda nota"},{"criado_em":"2026-09-19T09:35:57","id":3,"texto":"terceira nota"}]
+
+$ curl -s -X POST http://localhost:8000/notas -H "Content-Type: application/json" -d '{}' -w "HTTP %{http_code}"
+{"erro":"o campo 'texto' e obrigatorio"}
+HTTP 400
+
+$ ls -la $DATA_DIR
+total 12
+drwxr-xr-x 1 Rafinha 197121     0 Sep 19 09:35 .
+drwxr-xr-x 1 Rafinha 197121     0 Sep 19 09:35 ..
+-rw-r--r-- 1 Rafinha 197121 12288 Sep 19 09:35 notas.db

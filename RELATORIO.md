@@ -1,6 +1,6 @@
 # Relatório — Implementação de Serviços com Docker
 
-**Integrantes:** Geisbelly Victória e [NOME DA DUPLA — preencher]
+**Integrantes:** Geisbelly Victória e Rafael Nunes
 **Disciplina:** Computação em Nuvem — Aula 5
 **Data:** 18 de setembro de 2026
 **Repositório:** `notas-docker`
@@ -47,6 +47,31 @@ Duas decisões de implementação merecem destaque:
 **Criação idempotente do esquema.** A função `init_db()` é chamada no nível do módulo e executa `CREATE TABLE IF NOT EXISTS`. Isso é o que faz a prova de persistência funcionar: quando um container novo é montado sobre um volume que já contém o banco, a instrução encontra a tabela existente e não faz nada. Sem a cláusula `IF NOT EXISTS`, o segundo container falharia ao subir.
 
 **Consultas parametrizadas.** O `INSERT` usa placeholders `?` com os valores em tupla separada, e nunca interpolação de string. O driver do SQLite envia comando e dados por caminhos distintos, de modo que o conteúdo da anotação nunca é interpretado como SQL — prevenindo injeção de SQL.
+
+### 2.1 Etapa 1 — Teste local (fora do Docker)
+
+Antes de containerizar, a aplicação foi executada diretamente no host, em um ambiente virtual com as dependências do `requirements.txt` (Flask 3.0.3) e `DATA_DIR` apontando para um diretório local:
+
+```bash
+$ DATA_DIR=./data python app.py
+
+$ curl -s http://localhost:8000/health
+{"status":"ok"}
+
+$ curl -X POST http://localhost:8000/notas -H "Content-Type: application/json" -d '{"texto": "primeira nota"}'
+{"criado_em":"2026-09-19T09:35:56","id":1,"texto":"primeira nota"}
+
+$ curl -s http://localhost:8000/notas
+[{"criado_em":"2026-09-19T09:35:56","id":1,"texto":"primeira nota"},
+ {"criado_em":"2026-09-19T09:35:57","id":2,"texto":"segunda nota"},
+ {"criado_em":"2026-09-19T09:35:57","id":3,"texto":"terceira nota"}]
+
+$ curl -s -X POST http://localhost:8000/notas -H "Content-Type: application/json" -d '{}' -w "HTTP %{http_code}"
+{"erro":"o campo 'texto' e obrigatorio"}
+HTTP 400
+```
+
+O arquivo `notas.db` foi criado no diretório indicado por `DATA_DIR` (12288 bytes). As três rotas funcionaram e a validação retornou `400` para corpo sem `texto`. Saída completa em [`evidencias/etapa1-local.txt`](evidencias/etapa1-local.txt).
 
 ---
 

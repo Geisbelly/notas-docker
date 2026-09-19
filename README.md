@@ -77,7 +77,7 @@ notas-docker/
 ├── compose.yaml        # alternativa declarativa: serviço, porta, volume e healthcheck
 ├── README.md
 ├── RELATORIO.md        # relatório da atividade
-└── evidencias/         # saídas de terminal das etapas 3 a 7 e do Compose
+└── evidencias/         # saídas de terminal das etapas 1 a 7 e do Compose
 ```
 
 ## Versões da imagem
