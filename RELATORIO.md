@@ -1,6 +1,7 @@
 # Relatório — Implementação de Serviços com Docker
 
-**Aluna:** Geisbelly Victória
+**Integrantes:** Geisbelly Victória e [NOME DA DUPLA — preencher]
+**Disciplina:** Computação em Nuvem — Aula 5
 **Data:** 18 de setembro de 2026
 **Repositório:** `notas-docker`
 
@@ -127,7 +128,9 @@ Por convenção, `VOLUME` deve vir depois de qualquer `RUN` que escreva nesse di
 
 Define o comando padrão do container, na **forma exec** (lista JSON), e não na forma shell.
 
-Na forma shell (`CMD python app.py`), o Docker executaria `/bin/sh -c "python app.py"`: o shell se tornaria o PID 1 e o Python seria um processo filho. O `docker stop` envia `SIGTERM` ao PID 1, e o shell não repassa o sinal — o container só morreria após 10 segundos, pelo `SIGKILL` de timeout. Na forma exec, o Python é o PID 1 e recebe o sinal diretamente, encerrando imediatamente. Esse comportamento foi observado na Etapa 5, onde o `docker stop` retornou em menos de um segundo.
+Na forma shell (`CMD python app.py`), o Docker executaria `/bin/sh -c "python app.py"`: o shell se tornaria o PID 1 e o Python seria um processo filho. O `docker stop` envia `SIGTERM` ao PID 1, e o shell não repassa o sinal ao filho. Na forma exec, o Python é o próprio PID 1 e o sinal chega diretamente à aplicação, sem intermediário.
+
+Uma ressalva: o PID 1 de um container não recebe a ação padrão dos sinais do kernel, então um processo Python que não instale um *handler* para `SIGTERM` pode ignorá-lo, e o `docker stop` acabaria esperando o prazo de 10 s antes de enviar `SIGKILL`. Para esta atividade isso é aceitável (o SQLite grava cada transação com `commit`, então não há dado em memória a perder), mas em um serviço real convém tratar o sinal na aplicação ou usar `docker run --init`.
 
 Optou-se por `CMD` e não `ENTRYPOINT` porque `CMD` permite sobrescrever o comando na linha de execução — recurso usado na Etapa 7 para inspecionar o conteúdo da imagem com `docker run --rm notas-api:1.0 ls -la /app`.
 
@@ -226,7 +229,7 @@ Saída completa em [`evidencias/etapa3-history.txt`](evidencias/etapa3-history.t
 
 Três conclusões:
 
-1. **Cerca de 142 MB dos 195 MB — aproximadamente 73% — vêm da imagem base.** A aplicação inteira, Flask incluído, custa menos de 6 MB. Isso demonstra que a escolha da tag base é a decisão de maior impacto no tamanho final da imagem, muito mais do que qualquer otimização no código da aplicação.
+1. **A imagem base responde por quase todo o conteúdo.** As camadas herdadas somam cerca de 142 MB, contra cerca de 5,7 MB das camadas próprias (Flask e dependências incluídos) — ou seja, ~96% da soma das camadas (~148 MB). Isso demonstra que a escolha da tag base é a decisão de maior impacto no tamanho final da imagem, muito mais do que qualquer otimização no código da aplicação. (A soma das camadas fica abaixo dos 195 MB de `DISK USAGE` da seção 4.3 porque essa coluna do Docker 29 é uma métrica própria do *image store* e não a simples soma das camadas do `docker history`.)
 2. **`ENV`, `EXPOSE`, `VOLUME` e `CMD` aparecem com `0 B`.** Elas gravam metadados no *manifest* da imagem, não arquivos no sistema de arquivos. É a evidência concreta de que `EXPOSE` não abre porta alguma: se abrisse, teria custo.
 3. **`COPY requirements.txt .` (12.3 kB) está em uma camada separada de `COPY . .` (20.5 kB)** — é essa separação que preserva o cache do `pip install`.
 
@@ -239,7 +242,7 @@ Uma versão inicial do `.dockerignore` não excluía a pasta `.history/` (extens
 | `.dockerignore` incompleto | 40.32 kB | 168 kB |
 | `.dockerignore` completo | **1.90 kB** | **20.5 kB** |
 
-A camada caiu de 168 kB para 20.5 kB. A verificação do conteúdo final da imagem confirma que apenas os arquivos da aplicação foram copiados:
+A camada caiu de 168 kB para 20.5 kB. A verificação do conteúdo final da imagem confirma que apenas os arquivos do projeto foram copiados (o `Dockerfile` e o `.dockerignore` continuam entrando na imagem, pois não foram listados no `.dockerignore`; são inofensivos, mas poderiam ser excluídos):
 
 ```
 $ docker run --rm notas-api:1.0 ls -la /app
@@ -342,8 +345,6 @@ CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
 ```
 
 Arquivo: [`evidencias/etapa5-1-container-removido.txt`](evidencias/etapa5-1-container-removido.txt). Nenhum container existe mais. A camada gravável foi destruída junto.
-
-O `docker stop` retornou em menos de um segundo — consequência direta do `CMD` na forma exec, conforme explicado na seção 3.
 
 ### 6.2 O volume sobreviveu
 
@@ -563,7 +564,7 @@ Arquivo: [`evidencias/etapa7-3-conteudo-container.txt`](evidencias/etapa7-3-cont
 
 **Resposta:** um único arquivo, `notas.db`, com 12288 bytes — o banco SQLite contendo a tabela `notas` e os três registros.
 
-Comparando esta listagem com a do host (Pergunta 1), nota-se que o **tamanho é idêntico (12288 bytes)** e que apenas a representação do horário difere: `18:08` no host e `21:08` no container. Essa diferença de três horas é justamente o fuso — o host em BRT (UTC−03) e o container em UTC. Não são duas cópias sincronizadas: **é o mesmo arquivo, o mesmo inode, visto de dentro do namespace de montagem do container**. Essa é a essência técnica de um volume.
+Comparando esta listagem com a do host (Pergunta 1), nota-se que o **tamanho é idêntico (12288 bytes)** e que apenas a representação do horário difere: `18:08` no host e `21:08` no container. Essa diferença de três horas é justamente o fuso — o host em BRT (UTC−03) e o container em UTC. Não são duas cópias sincronizadas: o tamanho e o instante de modificação coincidem (18:08 BRT = 21:08 UTC), o que indica que **é o mesmo arquivo, visto de dentro do namespace de montagem do container**. Essa é a essência técnica de um volume.
 
 ### Pergunta 3 — O que acontece com os dados ao executar `docker volume rm notas-dados` com o container parado e removido?
 
@@ -607,14 +608,12 @@ docker run --rm -v notas-dados:/v -v $(pwd):/backup alpine tar czf /backup/notas
 | Pergunta | Resposta | Evidência |
 |---|---|---|
 | Onde fica no host? | `/var/lib/docker/volumes/notas-dados/_data`, driver `local`, gerenciado pelo Docker Engine | `docker volume inspect` + `ls` no caminho real |
-| Conteúdo de `/app/data`? | O arquivo `notas.db` (12288 bytes); mesmo inode visto do host, diferindo apenas no fuso exibido | `docker exec ls -la` comparado ao `ls` do host |
+| Conteúdo de `/app/data`? | O arquivo `notas.db` (12288 bytes); mesmo arquivo visto do host, diferindo apenas no fuso exibido | `docker exec ls -la` comparado ao `ls` do host |
 | E o `docker volume rm`? | Apagamento permanente, sem lixeira nem confirmação. Bloqueado se houver container referenciando; um `run` posterior recria o volume vazio, sem erro | Erro de volume em uso + listagem vazia + `[]` no `curl` |
 
 ---
 
 ## 9. Dificuldades e aprendizados
-
-> **Rascunho baseado no que efetivamente ocorreu durante a execução. Revise e reescreva na sua voz antes de entregar — esta seção vale mais quando soa como relato pessoal.**
 
 A maior dificuldade não esteve no Docker em si, mas em colocá-lo para funcionar. O Docker Desktop estava instalado e o cliente `docker` respondia normalmente no PowerShell, o que dava a impressão de que tudo estava certo — mas toda tentativa de comando falhava com `failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine`. Levei um tempo até entender que cliente e servidor são componentes separados: o CLI estava lá, o daemon não. Investigando, descobri que o serviço `com.docker.service` permanecia parado e a distro utilitária `docker-desktop` do WSL2 nunca saía do estado `Stopped`. Mesmo iniciando a aplicação manualmente, ela subia os processos e encerrava sozinha depois de alguns minutos, sem mensagem de erro útil.
 
@@ -632,11 +631,57 @@ Por fim, a Etapa 7 trouxe a constatação que mais me marcou. Ao comparar o `ls`
 
 ---
 
-## 10. Conclusão
+## 10. Extra — Docker Compose
+
+Além dos comandos `docker run` exigidos, o repositório inclui um `compose.yaml` que descreve o mesmo serviço de forma declarativa:
+
+```yaml
+services:
+  api:
+    build: .
+    image: notas-api:1.0
+    container_name: notas
+    ports:
+      - "8000:8000"
+    environment:
+      DATA_DIR: /app/data
+    volumes:
+      - notas-dados:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  notas-dados:
+    name: notas-dados
+```
+
+- **`build: .` + `image: notas-api:1.0`** — constrói a partir do `Dockerfile` do projeto e marca a imagem com a mesma tag usada nas etapas anteriores.
+- **`ports`, `environment` e `volumes`** — equivalem às flags `-p`, `-e` e `-v` do `docker run`, mas ficam versionadas no repositório.
+- **`name: notas-dados`** — sem essa linha, o Compose prefixaria o volume com o nome do projeto (algo como `notas-docker_notas-dados`). Fixando o nome, o volume é o mesmo das etapas manuais.
+- **`healthcheck`** — usa o próprio Python da imagem (que não tem `curl`) para consultar `/health` a cada 10 s.
+- **`restart: unless-stopped`** — reinicia o serviço após falhas ou reinício do Docker, exceto se parado manualmente.
+
+Evidência ([`evidencias/etapa8-compose.txt`](evidencias/etapa8-compose.txt) e [`evidencias/etapa8-compose-ps.txt`](evidencias/etapa8-compose-ps.txt)): após `docker compose up -d --build`, o serviço foi listado como `Up 20 seconds (healthy)` e uma nota criada via `curl` foi retornada por `GET /notas`.
+
+```
+NAME      IMAGE           COMMAND           SERVICE   STATUS                    PORTS
+notas     notas-api:1.0   "python app.py"   api       Up 20 seconds (healthy)   0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+```
+
+`docker compose down` preserva o volume; `docker compose down -v` o remove, com o mesmo efeito permanente descrito na Pergunta 3 da Etapa 7.
+
+---
+
+## 11. Conclusão
 
 A atividade demonstrou, com evidências reproduzíveis, que:
 
-1. Uma imagem própria construída a partir de `python:3.12-slim` empacota aplicação, dependências e configuração em um artefato imutável de 195 MB, dos quais cerca de 73% vêm da imagem base.
+1. Uma imagem própria construída a partir de `python:3.12-slim` empacota aplicação, dependências e configuração em um artefato imutável de 195 MB (47,8 MB compactados), em que a imagem base responde por cerca de 142 MB e a aplicação com suas dependências por menos de 6 MB.
 2. A ordenação das instruções do Dockerfile tem efeito mensurável: separar a cópia do `requirements.txt` reduziu um rebuild de 12 para 1 segundo.
 3. O sistema de arquivos de um container é efêmero, mas volumes nomeados sobrevivem à sua destruição — comprovado por comparação byte a byte entre listagens obtidas antes e depois de destruir e recriar o container.
 4. Sem montagem nomeada, os dados se tornam inacessíveis ainda que fisicamente sobrevivam em volumes anônimos órfãos.

@@ -74,10 +74,10 @@ notas-docker/
 ├── requirements.txt    # dependências (Flask)
 ├── Dockerfile          # receita da imagem
 ├── .dockerignore       # filtro do contexto de build
-├── compose.yaml        # serviço, porta, volume e healthcheck
+├── compose.yaml        # alternativa declarativa: serviço, porta, volume e healthcheck
 ├── README.md
 ├── RELATORIO.md        # relatório da atividade
-└── evidencias/         # saídas de terminal das etapas 3 a 7
+└── evidencias/         # saídas de terminal das etapas 3 a 7 e do Compose
 ```
 
 ## Versões da imagem
@@ -185,7 +185,9 @@ O campo *root* da entrada do `mountinfo` é o que revela o caminho de origem no 
 
 ## Alternativa: Docker Compose
 
-O arquivo [compose.yaml](compose.yaml) declara o serviço, o mapeamento de porta, o volume nomeado e um *healthcheck* que consulta `/health`. Build e execução em um comando:
+O arquivo [compose.yaml](compose.yaml) declara o serviço, o mapeamento de porta, o volume nomeado e um *healthcheck* que consulta `/health`. Ele usa a tag `notas-api:1.0`, que é a documentada no relatório e nas evidências; para subir a versão com interface web, troque a linha `image:` para `notas-api:1.1`.
+
+Build e execução em um comando:
 
 ```bash
 docker compose up -d --build
